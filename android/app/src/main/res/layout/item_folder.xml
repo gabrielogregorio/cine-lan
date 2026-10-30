@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/AppButton"
+    android:layout_width="match_parent"
+    android:layout_marginTop="4dp"
+    android:layout_marginEnd="0dp"
+    android:layout_marginBottom="4dp"
+    android:ellipsize="end"
+    android:gravity="center_vertical"
+    android:maxLines="1"
+    android:textStyle="normal" />

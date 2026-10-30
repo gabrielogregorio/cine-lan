@@ -1,0 +1,29 @@
+<resources>
+    <color name="background">#14161B</color>
+    <color name="panel">#22252D</color>
+    <color name="text">#F2F2F4</color>
+    <color name="text_soft">#B4B7C0</color>
+    <color name="focus">#FFFFFF</color>
+
+    <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:colorAccent">@color/focus</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <style name="AppButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_marginEnd">12dp</item>
+        <item name="android:paddingStart">22dp</item>
+        <item name="android:paddingEnd">22dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:background">@drawable/button</item>
+        <item name="android:textColor">@drawable/button_text</item>
+    </style>
+</resources>
