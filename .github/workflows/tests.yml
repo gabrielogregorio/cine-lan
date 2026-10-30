@@ -1,0 +1,78 @@
+name: Tests Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: Server Tests (unit and HTTP)
+    timeout-minutes: 5
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Run the server tests
+        run: python3 -m unittest discover -s tests
+
+  demo-library:
+    name: Fictional library builds and is served
+    timeout-minutes: 5
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: ./.github/actions/setup-environment
+
+      - name: Install ffmpeg and the fonts
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
+
+      - name: Build the library and read it through the API
+        run: |
+          .venv/bin/python demo/make_library.py build/demo-library
+          cd server
+          MEDIA_LAN_ROOT=../build/demo-library MEDIA_LAN_DATABASE=../build/demo.sqlite python3 -m media_lan &
+          for _ in $(seq 1 20); do
+            sleep 0.5
+            curl -fs http://127.0.0.1:8097/api/health | grep -q '"movies": 14' && exit 0
+          done
+          curl -s http://127.0.0.1:8097/api/health
+          exit 1
+
+  android:
+    name: Android Tests (unit tests, debug and release APK)
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Android SDK packages
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Unit tests and debug APK
+        run: android/build.sh
+
+      - name: Release APK
+        run: android/build.sh release
+
+      - name: Upload the test report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: android-unit-tests
+          path: android/app/build/reports/tests
+          if-no-files-found: ignore
+          retention-days: 14

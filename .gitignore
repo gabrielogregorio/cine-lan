@@ -1,0 +1,28 @@
+# Build output
+build/
+.gradle/
+.kotlin/
+local.properties
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ruff_cache/
+
+# Local data
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.log
+
+# Editors
+.idea/
+.vscode/
+*.iml
+.DS_Store

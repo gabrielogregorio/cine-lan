@@ -1,0 +1,74 @@
+name: check lint
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  python-and-shell:
+    name: Lint (ruff + shellcheck + repository rules)
+    timeout-minutes: 5
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: ./.github/actions/setup-environment
+
+      - name: Ruff
+        run: .venv/bin/ruff check --output-format=github .
+
+      - name: ShellCheck
+        run: shellcheck --severity=warning install.sh run-tests.sh android/build.sh android/emulator.sh demo/serve.sh
+
+      - name: Scripts are executable in git
+        run: |
+          bad=$(git ls-files -s '*.sh' 'android/gradlew' | awk '$1 != "100755" {print $4}')
+          if [[ -n "$bad" ]]; then
+            for f in $bad; do echo "::error file=$f::not executable in git: git update-index --chmod=+x $f"; done
+            exit 1
+          fi
+
+      - name: Actions are pinned to a commit hash
+        run: |
+          bad=$(grep -rnE '^\s*(- )?uses:\s' .github | grep -vE 'uses:\s+\./' | grep -vE '@[0-9a-f]{40}( |$)' || true)
+          if [[ -n "$bad" ]]; then
+            echo "$bad" | while IFS=: read -r f l _; do echo "::error file=$f,line=$l::pin this action to a full commit hash"; done
+            exit 1
+          fi
+
+      - name: Workflow files are valid YAML
+        run: .venv/bin/python -c "import sys, yaml; [yaml.safe_load(open(f)) for f in sys.argv[1:]]" .github/workflows/*.yml
+
+      - name: VERSION is semver
+        run: grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$' VERSION
+
+  android:
+    name: Lint (Android)
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Android SDK packages
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+
+      - name: Android Lint
+        working-directory: android
+        run: ./gradlew --console=plain lintDebug
+
+      - name: Upload the lint report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: android-lint
+          path: android/app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
+          retention-days: 14

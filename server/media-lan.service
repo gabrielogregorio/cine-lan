@@ -1,0 +1,43 @@
+[Unit]
+Description=Media LAN: media server for the local network only
+After=network-online.target
+Wants=network-online.target
+RequiresMountsFor=/media/ssd
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=media-lan
+Group=media-lan
+WorkingDirectory=/opt/media-lan
+ExecStart=/usr/bin/python3 -m media_lan
+Environment=MEDIA_LAN_ROOT=/media/ssd/data
+Environment=MEDIA_LAN_DATABASE=/var/lib/media-lan/media-lan.sqlite
+Environment=MEDIA_LAN_PORT=8097
+Environment=MEDIA_LAN_NETWORKS=192.168.0.0/24,127.0.0.0/8
+StateDirectory=media-lan
+Restart=always
+RestartSec=10
+
+# Network: nothing enters or leaves outside the LAN, neither through the port nor from the process itself.
+IPAddressDeny=any
+IPAddressAllow=192.168.0.0/24
+IPAddressAllow=127.0.0.0/8
+RestrictAddressFamilies=AF_INET AF_UNIX
+
+# Disk: the library is read-only; only the database in /var/lib/media-lan is writable.
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
