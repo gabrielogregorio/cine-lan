@@ -49,7 +49,7 @@ dependencies {
     implementation("androidx.leanback:leanback:1.0.0")
     implementation("androidx.media3:media3-exoplayer:1.9.1")
     implementation("androidx.media3:media3-ui:1.9.1")
-    implementation("com.github.bumptech.glide:glide:5.0.5")
+    implementation("com.github.bumptech.glide:glide:5.0.9")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
